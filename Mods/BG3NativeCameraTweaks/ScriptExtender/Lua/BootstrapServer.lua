@@ -37,6 +37,30 @@ local function enableCamera()
         return false, zoomReason
     end
 
+    if Config.FOV ~= nil and Config.FOV.Enabled then
+        if Ext.Camera.SetFOV == nil then
+            return false, "this build of bg3se-macos does not provide FOV control"
+        end
+        local fovOk, fovReason = Ext.Camera.SetFOV(Config.FOV)
+        if not fovOk then
+            return false, fovReason
+        end
+    elseif Ext.Camera.ClearFOV ~= nil then
+        Ext.Camera.ClearFOV()
+    end
+
+    if Config.Offsets ~= nil and Config.Offsets.Enabled then
+        if Ext.Camera.SetOffsets == nil then
+            return false, "this build of bg3se-macos does not provide camera offsets"
+        end
+        local offsetsOk, offsetsReason = Ext.Camera.SetOffsets(Config.Offsets)
+        if not offsetsOk then
+            return false, offsetsReason
+        end
+    elseif Ext.Camera.ClearOffsets ~= nil then
+        Ext.Camera.ClearOffsets()
+    end
+
     stopRetrying()
     Ext.Print("[NativeCameraTweaks] Mouse pitch and expanded zoom enabled")
     return true

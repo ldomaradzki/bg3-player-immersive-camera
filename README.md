@@ -7,8 +7,9 @@ zoom limits whenever the client camera becomes available.
 Edit `CameraConfig.lua` to change the initial pitch, pitch limits, sensitivity,
 vertical-input direction, or exploration/combat zoom ranges. The current
 implementation covers free mouse pitch and normal, tactical, and alternate
-zoom bounds. FOV, camera offsets, controller input, clipping protection, and an
-in-game settings UI are still pending.
+zoom bounds. FOV and camera-offset overrides are implemented but disabled by
+default; set their `Enabled` flags after choosing preferred values. Controller
+input, clipping protection, and an in-game settings UI are still pending.
 
 Install the `BG3NativeCameraTweaks` directory under:
 

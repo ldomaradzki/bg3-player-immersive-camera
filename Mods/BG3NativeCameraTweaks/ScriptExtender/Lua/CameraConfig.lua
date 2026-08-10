@@ -28,4 +28,35 @@ return {
             AltMax = 40.0,
         },
     },
+
+    -- Optional Windows-parity definition overrides. Leave disabled to retain
+    -- the game's original FOV and framing while still using pitch and zoom.
+    FOV = {
+        Enabled = false,
+        Exploration = {
+            Close = 55.0,
+            Far = 55.0,
+            Tactical = 25.0,
+            AltClose = 45.0,
+            AltFar = 45.0,
+        },
+        Combat = {
+            Close = 55.0,
+            Far = 55.0,
+            Tactical = 25.0,
+            AltClose = 45.0,
+            AltFar = 45.0,
+        },
+    },
+    Offsets = {
+        Enabled = false,
+        Exploration = {
+            Horizontal = 0.0,
+            Vertical = 0.8,
+        },
+        Combat = {
+            Horizontal = 0.0,
+            Vertical = 0.8,
+        },
+    },
 }
