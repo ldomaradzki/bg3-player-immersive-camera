@@ -16,8 +16,9 @@ local function stopRetrying()
 end
 
 local function enableCamera()
-    if Ext.Camera == nil or Ext.Camera.EnableMousePitch == nil then
-        return false, "this build of bg3se-macos does not provide mouse pitch"
+    if Ext.Camera == nil or Ext.Camera.EnableMousePitch == nil or
+        Ext.Camera.SetZoomLimits == nil then
+        return false, "this build of bg3se-macos does not provide the required camera controls"
     end
 
     -- Camera TypeIds are registered late during startup on the current game
@@ -26,14 +27,19 @@ local function enableCamera()
         Ext.Entity.Discover()
     end
 
-    local ok, reason = Ext.Camera.EnableMousePitch(Config)
-    if ok then
-        stopRetrying()
-        Ext.Print("[NativeCameraTweaks] Mouse pitch enabled")
-        return true
+    local pitchOk, pitchReason = Ext.Camera.EnableMousePitch(Config)
+    if not pitchOk then
+        return false, pitchReason
     end
 
-    return false, reason
+    local zoomOk, zoomReason = Ext.Camera.SetZoomLimits(Config.ZoomLimits)
+    if not zoomOk then
+        return false, zoomReason
+    end
+
+    stopRetrying()
+    Ext.Print("[NativeCameraTweaks] Mouse pitch and expanded zoom enabled")
+    return true
 end
 
 local function beginEnable()
