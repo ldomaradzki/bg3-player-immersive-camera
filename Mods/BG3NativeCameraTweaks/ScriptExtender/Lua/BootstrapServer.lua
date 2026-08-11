@@ -227,15 +227,115 @@ local function setProfileEnabled(enabled)
     end
 end
 
+local function reportPanelApply(name, ok, reason)
+    if not ok then
+        Ext.Print("[NativeCameraTweaks] Could not apply " .. name .. ": " ..
+            tostring(reason))
+    end
+end
+
+local function refreshAdaptiveBaseline()
+    if Config.Adaptive ~= nil and Config.Adaptive.Enabled and
+        Ext.Camera.EnableAdaptive ~= nil then
+        local ok, reason = Ext.Camera.EnableAdaptive(Config.Adaptive)
+        reportPanelApply("adaptive framing", ok, reason)
+    end
+end
+
+local function suspendAdaptiveBaseline()
+    if Config.Adaptive ~= nil and Config.Adaptive.Enabled and
+        Ext.Camera.DisableAdaptive ~= nil then
+        local ok, reason = Ext.Camera.DisableAdaptive()
+        reportPanelApply("adaptive framing suspension", ok, reason)
+    end
+end
+
+local function applyPanelValue(key, value)
+    if key == "Enabled" then
+        setProfileEnabled(value ~= 0)
+        return
+    elseif key == "FOV" then
+        local fov = math.max(40.0, math.min(90.0, value))
+        Config.FOV.Exploration.Close = fov
+        Config.FOV.Exploration.Far = fov
+        if profileRequested then
+            suspendAdaptiveBaseline()
+            local ok, reason = Ext.Camera.SetFOV(Config.FOV)
+            reportPanelApply("field of view", ok, reason)
+            refreshAdaptiveBaseline()
+        end
+    elseif key == "CloseZoom" or key == "FarZoom" then
+        if key == "CloseZoom" then
+            Config.ZoomToggle.Close = math.max(1.5, math.min(6.0, value))
+            if Config.ZoomToggle.Close >= Config.ZoomToggle.Far then
+                Config.ZoomToggle.Far = Config.ZoomToggle.Close + 0.25
+            end
+        else
+            Config.ZoomToggle.Far = math.max(4.0, math.min(15.0, value))
+            if Config.ZoomToggle.Far <= Config.ZoomToggle.Close then
+                Config.ZoomToggle.Close = Config.ZoomToggle.Far - 0.25
+            end
+        end
+        if profileRequested then
+            local ok, reason = Ext.Camera.EnableZoomToggle(Config.ZoomToggle)
+            reportPanelApply("zoom distances", ok, reason)
+        end
+    elseif key == "HorizontalOffset" or key == "VerticalOffset" then
+        if key == "HorizontalOffset" then
+            Config.Offsets.Exploration.Horizontal =
+                math.max(-2.0, math.min(2.0, value))
+        else
+            Config.Offsets.Exploration.Vertical =
+                math.max(-1.0, math.min(3.0, value))
+        end
+        if profileRequested then
+            suspendAdaptiveBaseline()
+            local ok, reason = Ext.Camera.SetOffsets(Config.Offsets)
+            reportPanelApply("camera offsets", ok, reason)
+            refreshAdaptiveBaseline()
+        end
+    elseif key == "MinimumPitch" or key == "MaximumPitch" or
+        key == "InvertVertical" then
+        if key == "MinimumPitch" then
+            Config.Min = math.max(-30.0, math.min(20.0, value))
+            if Config.Min >= Config.Max then Config.Max = Config.Min + 1.0 end
+        elseif key == "MaximumPitch" then
+            Config.Max = math.max(20.0, math.min(70.0, value))
+            if Config.Max <= Config.Min then Config.Min = Config.Max - 1.0 end
+        else
+            Config.Invert = value ~= 0
+        end
+
+        if profileRequested then
+            local state = Ext.Camera.GetState ~= nil and
+                Ext.Camera.GetState() or nil
+            local currentPitch = state ~= nil and state.PitchDegrees or
+                Config.Initial
+            Config.Initial = math.max(Config.Min,
+                math.min(Config.Max, currentPitch))
+            local ok, reason = Ext.Camera.EnableMousePitch(Config)
+            reportPanelApply("pitch settings", ok, reason)
+        end
+    end
+end
+
 local function togglePanel()
     if Ext.UI ~= nil and Ext.UI.ToggleNativePanel ~= nil then
         Ext.UI.ToggleNativePanel(
             "Native Camera Tweaks",
             "Camera settings",
-            profileRequested,
-            function(enabled)
-                setProfileEnabled(enabled)
-            end)
+            {
+                Enabled = profileRequested,
+                FOV = Config.FOV.Exploration.Close,
+                CloseZoom = Config.ZoomToggle.Close,
+                FarZoom = Config.ZoomToggle.Far,
+                HorizontalOffset = Config.Offsets.Exploration.Horizontal,
+                VerticalOffset = Config.Offsets.Exploration.Vertical,
+                MinimumPitch = Config.Min,
+                MaximumPitch = Config.Max,
+                InvertVertical = Config.Invert,
+            },
+            applyPanelValue)
         return
     end
 
