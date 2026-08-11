@@ -29,6 +29,15 @@ return {
         },
     },
 
+    -- Keep the unlocked camera above BG3's native AiGrid floor height. The
+    -- distance is reduced only when the pitched camera would enter terrain.
+    FloorProtection = {
+        Enabled = true,
+        FloorOffset = 0.1,
+        MinZoom = 0.5,
+        Radius = 0.25,
+    },
+
     -- Optional Windows-parity definition overrides. Leave disabled to retain
     -- the game's original FOV and framing while still using pitch and zoom.
     FOV = {

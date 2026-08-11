@@ -37,6 +37,19 @@ local function enableCamera()
         return false, zoomReason
     end
 
+    if Config.FloorProtection ~= nil and Config.FloorProtection.Enabled then
+        if Ext.Camera.EnableFloorProtection == nil then
+            return false, "this build of bg3se-macos does not provide floor protection"
+        end
+        local floorOk, floorReason = Ext.Camera.EnableFloorProtection(
+            Config.FloorProtection)
+        if not floorOk then
+            return false, floorReason
+        end
+    elseif Ext.Camera.DisableFloorProtection ~= nil then
+        Ext.Camera.DisableFloorProtection()
+    end
+
     if Config.FOV ~= nil and Config.FOV.Enabled then
         if Ext.Camera.SetFOV == nil then
             return false, "this build of bg3se-macos does not provide FOV control"
@@ -62,7 +75,7 @@ local function enableCamera()
     end
 
     stopRetrying()
-    Ext.Print("[NativeCameraTweaks] Mouse pitch and expanded zoom enabled")
+    Ext.Print("[NativeCameraTweaks] Mouse pitch, zoom, and floor protection enabled")
     return true
 end
 
