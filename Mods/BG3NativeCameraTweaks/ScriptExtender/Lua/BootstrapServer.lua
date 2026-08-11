@@ -37,6 +37,19 @@ local function enableCamera()
         return false, zoomReason
     end
 
+    if Config.ZoomToggle ~= nil and Config.ZoomToggle.Enabled then
+        if Ext.Camera.EnableZoomToggle == nil then
+            return false, "this build of bg3se-macos does not provide two-state zoom"
+        end
+        local toggleOk, toggleReason = Ext.Camera.EnableZoomToggle(
+            Config.ZoomToggle)
+        if not toggleOk then
+            return false, toggleReason
+        end
+    elseif Ext.Camera.DisableZoomToggle ~= nil then
+        Ext.Camera.DisableZoomToggle()
+    end
+
     if Config.FloorProtection ~= nil and Config.FloorProtection.Enabled then
         if Ext.Camera.EnableFloorProtection == nil then
             return false, "this build of bg3se-macos does not provide floor protection"
@@ -74,8 +87,33 @@ local function enableCamera()
         Ext.Camera.ClearOffsets()
     end
 
+    if Config.Follow ~= nil and Config.Follow.Enabled then
+        if Ext.Camera.SetFollowSpeed == nil then
+            return false, "this build of bg3se-macos does not provide camera follow-speed control"
+        end
+        local followOk, followReason = Ext.Camera.SetFollowSpeed(Config.Follow)
+        if not followOk then
+            return false, followReason
+        end
+    elseif Ext.Camera.ClearFollowSpeed ~= nil then
+        Ext.Camera.ClearFollowSpeed()
+    end
+
+    if Config.Adaptive ~= nil and Config.Adaptive.Enabled then
+        if Ext.Camera.EnableAdaptive == nil then
+            return false, "this build of bg3se-macos does not provide adaptive framing"
+        end
+        local adaptiveOk, adaptiveReason = Ext.Camera.EnableAdaptive(
+            Config.Adaptive)
+        if not adaptiveOk then
+            return false, adaptiveReason
+        end
+    elseif Ext.Camera.DisableAdaptive ~= nil then
+        Ext.Camera.DisableAdaptive()
+    end
+
     stopRetrying()
-    Ext.Print("[NativeCameraTweaks] Mouse pitch, zoom, and floor protection enabled")
+    Ext.Print("[NativeCameraTweaks] Camera controls enabled")
     return true
 end
 

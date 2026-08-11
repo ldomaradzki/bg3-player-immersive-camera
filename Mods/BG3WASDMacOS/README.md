@@ -8,6 +8,10 @@ ownership of movement, animation, collision, terrain, and gameplay-state
 checks. While enabled, the native capability also suppresses the overlapping
 keyboard camera-pan flag; mouse camera rotation remains available.
 
+Combat automatically suspends the direct-movement unlock and restores BG3's
+vanilla keyboard camera controls. Leaving combat resumes direct W/A/S/D
+movement and its camera-pan blocker without changing the configured preference.
+
 The behavior and command-binding design were researched with reference to
 [Ch4nKyy/BG3WASD](https://github.com/Ch4nKyy/BG3WASD), licensed under GPL-3.0.
 No Windows code address, x86 instruction patch, loader, or controller feature
