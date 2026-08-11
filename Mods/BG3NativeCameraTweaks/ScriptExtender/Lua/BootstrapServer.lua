@@ -7,6 +7,10 @@ local Config = require("CameraConfig")
 local retryTimer = nil
 local retryCount = 0
 local maxRetries = 120
+local profileRequested = true
+local profileEnabled = false
+local hotkeyDown = false
+local hotkeyTimer = nil
 
 local function stopRetrying()
     if retryTimer ~= nil then
@@ -16,6 +20,10 @@ local function stopRetrying()
 end
 
 local function enableCamera()
+    if not profileRequested then
+        return false, "third-person profile is disabled"
+    end
+
     if Ext.Camera == nil or Ext.Camera.EnableMousePitch == nil or
         Ext.Camera.SetZoomLimits == nil then
         return false, "this build of bg3se-macos does not provide the required camera controls"
@@ -112,14 +120,77 @@ local function enableCamera()
         Ext.Camera.DisableAdaptive()
     end
 
+    if Config.Hotkey ~= nil and Config.Hotkey.ToggleMovement and
+        Ext.Movement ~= nil and
+        Ext.Movement.EnableKeyboardMovement ~= nil then
+        local movementOk, movementReason =
+            Ext.Movement.EnableKeyboardMovement()
+        if not movementOk then
+            Ext.Print("[NativeCameraTweaks] Could not enable W/A/S/D: " ..
+                tostring(movementReason))
+        end
+    end
+
     stopRetrying()
+    profileEnabled = true
     Ext.Print("[NativeCameraTweaks] Camera controls enabled")
     return true
+end
+
+local function disableCamera()
+    stopRetrying()
+
+    -- Adaptive framing snapshots the configured FOV/offset baseline, so it
+    -- must restore that baseline before the definition overrides are cleared.
+    if Ext.Camera ~= nil then
+        if Ext.Camera.DisableAdaptive ~= nil then
+            Ext.Camera.DisableAdaptive()
+        end
+        if Ext.Camera.DisableZoomToggle ~= nil then
+            Ext.Camera.DisableZoomToggle()
+        end
+        if Ext.Camera.DisableFloorProtection ~= nil then
+            Ext.Camera.DisableFloorProtection()
+        end
+        if Ext.Camera.ClearFollowSpeed ~= nil then
+            Ext.Camera.ClearFollowSpeed()
+        end
+        if Ext.Camera.ClearOffsets ~= nil then
+            Ext.Camera.ClearOffsets()
+        end
+        if Ext.Camera.ClearFOV ~= nil then
+            Ext.Camera.ClearFOV()
+        end
+        if Ext.Camera.ClearZoomLimits ~= nil then
+            Ext.Camera.ClearZoomLimits()
+        end
+        if Ext.Camera.ClearPitch ~= nil then
+            Ext.Camera.ClearPitch()
+        end
+    end
+
+    if Config.Hotkey ~= nil and Config.Hotkey.ToggleMovement and
+        Ext.Movement ~= nil and
+        Ext.Movement.DisableKeyboardMovement ~= nil then
+        local movementOk, movementReason =
+            Ext.Movement.DisableKeyboardMovement()
+        if not movementOk then
+            Ext.Print("[NativeCameraTweaks] Could not restore vanilla W/A/S/D: " ..
+                tostring(movementReason))
+        end
+    end
+
+    profileEnabled = false
+    Ext.Print("[NativeCameraTweaks] Third-person profile disabled; vanilla camera and movement restored")
 end
 
 local function beginEnable()
     stopRetrying()
     retryCount = 0
+
+    if not profileRequested then
+        return
+    end
 
     local ok, reason = enableCamera()
     if ok then
@@ -140,6 +211,50 @@ local function beginEnable()
                 tostring(retryReason))
         end
     end, 250)
+end
+
+local function setProfileEnabled(enabled)
+    enabled = enabled == true
+    if profileRequested == enabled then
+        return
+    end
+
+    profileRequested = enabled
+    if profileRequested then
+        beginEnable()
+    else
+        disableCamera()
+    end
+end
+
+local function togglePanel()
+    if Ext.UI ~= nil and Ext.UI.ToggleNativePanel ~= nil then
+        Ext.UI.ToggleNativePanel(
+            "Native Camera Tweaks",
+            "Camera settings",
+            profileRequested,
+            function(enabled)
+                setProfileEnabled(enabled)
+            end)
+        return
+    end
+
+    Ext.Print("[NativeCameraTweaks] Native UI is unavailable in this bg3se-macos build")
+end
+
+if Config.Hotkey ~= nil and Config.Hotkey.Enabled and
+    Ext.Input ~= nil and Ext.Input.IsKeyPressed ~= nil then
+    hotkeyTimer = Ext.Timer.WaitFor(25, function()
+        local down = Ext.Input.IsKeyPressed(Config.Hotkey.Key)
+        if down and not hotkeyDown then
+            hotkeyDown = true
+            togglePanel()
+        elseif not down then
+            hotkeyDown = false
+        end
+    end, 25)
+    Ext.Print("[NativeCameraTweaks] Settings hotkey: " ..
+        tostring(Config.Hotkey.Key))
 end
 
 Ext.Events.SessionLoaded:Subscribe(beginEnable)

@@ -1,6 +1,14 @@
 -- Native Camera Tweaks defaults for macOS.
 -- Pitch is measured in degrees. Set Invert to true to reverse vertical input.
 return {
+    -- Toggle the complete third-person profile. On Macs whose function row is
+    -- configured for media controls, hold Fn while pressing this key.
+    Hotkey = {
+        Enabled = true,
+        Key = "BACKSLASH",
+        ToggleMovement = true,
+    },
+
     Initial = 25.0,
     -- Keep the camera above the terrain and below the near-vertical tactical
     -- view while retaining a useful third-person pitch range.
