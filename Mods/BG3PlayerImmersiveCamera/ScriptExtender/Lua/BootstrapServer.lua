@@ -40,6 +40,11 @@ local function enableCamera()
         return false, pitchReason
     end
 
+    if Ext.Camera.SetCapsLockMouseLook ~= nil then
+        Ext.Camera.SetCapsLockMouseLook(
+            Config.MouseLook ~= nil and Config.MouseLook.CapsLock == true)
+    end
+
     local zoomOk, zoomReason = Ext.Camera.SetZoomLimits(Config.ZoomLimits)
     if not zoomOk then
         return false, zoomReason
@@ -143,6 +148,9 @@ local function disableCamera()
     -- Adaptive framing snapshots the configured FOV/offset baseline, so it
     -- must restore that baseline before the definition overrides are cleared.
     if Ext.Camera ~= nil then
+        if Ext.Camera.SetCapsLockMouseLook ~= nil then
+            Ext.Camera.SetCapsLockMouseLook(false)
+        end
         if Ext.Camera.DisableAdaptive ~= nil then
             Ext.Camera.DisableAdaptive()
         end
@@ -254,6 +262,19 @@ local function applyPanelValue(key, value)
     if key == "Enabled" then
         setProfileEnabled(value ~= 0)
         return
+    elseif key == "CapsLockMouseLook" then
+        Config.MouseLook.CapsLock = value ~= 0
+        if Ext.Camera.SetCapsLockMouseLook ~= nil then
+            Ext.Camera.SetCapsLockMouseLook(
+                profileRequested and Config.MouseLook.CapsLock)
+        end
+        return
+    elseif key == "AdaptiveCrouch" then
+        Config.Adaptive.CrouchEnabled = value ~= 0
+        if profileRequested then
+            refreshAdaptiveBaseline()
+        end
+        return
     elseif key == "FOV" then
         local fov = math.max(40.0, math.min(90.0, value))
         Config.FOV.Exploration.Close = fov
@@ -326,6 +347,8 @@ local function togglePanel()
             "Camera and movement settings",
             {
                 Enabled = profileRequested,
+                CapsLockMouseLook = Config.MouseLook.CapsLock,
+                AdaptiveCrouch = Config.Adaptive.CrouchEnabled,
                 FOV = Config.FOV.Exploration.Close,
                 CloseZoom = Config.ZoomToggle.Close,
                 FarZoom = Config.ZoomToggle.Far,

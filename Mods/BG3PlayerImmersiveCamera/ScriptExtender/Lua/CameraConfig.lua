@@ -17,6 +17,12 @@ return {
     Sensitivity = 0.25,
     Invert = false,
 
+    -- Caps Lock selects persistent mouse-look mode. With Caps Lock off, BG3's
+    -- ordinary cursor and hold-middle-button camera behavior remain unchanged.
+    MouseLook = {
+        CapsLock = true,
+    },
+
     -- Authoritative camera-definition limits. These match the Windows mod's
     -- defaults and expand exploration zoom without changing the game's zoom
     -- interpolation. Combat is intentionally omitted and remains vanilla.
@@ -88,6 +94,8 @@ return {
     -- the default C/Hide binding mirrors the toggle as a macOS fallback.
     Adaptive = {
         Enabled = true,
+        -- Hide-state detection is still experimental and is off by default.
+        CrouchEnabled = false,
         CrouchVerticalDelta = -0.225,
         CrouchSmoothTime = 0.18,
         -- Deliberately obvious for the first live validation; we can reduce

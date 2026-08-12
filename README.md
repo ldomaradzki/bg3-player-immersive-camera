@@ -24,6 +24,7 @@ native camera, input, movement, and AppKit UI extensions in `bg3se-macos`.
 - Adaptive framing while hiding and an FOV increase while moving
 - Automatic return to BG3's tactical camera and vanilla keyboard behavior in
   combat, with the immersive profile restored afterward
+- Optional Caps Lock mouse-look mode, enabled by default
 - A small native settings panel toggled with `\`
 
 Controller mode is intentionally out of scope. The mod keeps BG3 in its native
@@ -61,6 +62,8 @@ to `modsettings.lsx`.
 The native panel currently exposes:
 
 - Enable Player Immersive Camera
+- Caps Lock mouse look (Caps on rotates the camera; Caps off restores the cursor)
+- Adaptive crouch camera (experimental and disabled by default)
 - Field of view
 - Close and far zoom distances
 - Horizontal and vertical framing offsets
