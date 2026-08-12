@@ -1,7 +1,0 @@
-{
-    "RequiredVersion": 1,
-    "ModTable": "BG3WASDMacOS",
-    "FeatureFlags": [
-        "Lua"
-    ]
-}

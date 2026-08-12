@@ -1,4 +1,4 @@
--- Native Camera Tweaks defaults for macOS.
+-- BG3 Player Immersive Camera defaults for macOS.
 -- Pitch is measured in degrees. Set Invert to true to reverse vertical input.
 return {
     -- Toggle the complete third-person profile. On Macs whose function row is

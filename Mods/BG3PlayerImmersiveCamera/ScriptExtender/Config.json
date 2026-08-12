@@ -1,6 +1,6 @@
 {
     "RequiredVersion": 1,
-    "ModTable": "BG3NativeCameraTweaks",
+    "ModTable": "BG3PlayerImmersiveCamera",
     "FeatureFlags": [
         "Lua"
     ]

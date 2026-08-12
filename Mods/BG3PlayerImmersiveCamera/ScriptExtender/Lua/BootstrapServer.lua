@@ -126,14 +126,14 @@ local function enableCamera()
         local movementOk, movementReason =
             Ext.Movement.EnableKeyboardMovement()
         if not movementOk then
-            Ext.Print("[NativeCameraTweaks] Could not enable W/A/S/D: " ..
+            Ext.Print("[PlayerImmersiveCamera] Could not enable W/A/S/D: " ..
                 tostring(movementReason))
         end
     end
 
     stopRetrying()
     profileEnabled = true
-    Ext.Print("[NativeCameraTweaks] Camera controls enabled")
+    Ext.Print("[PlayerImmersiveCamera] Camera controls enabled")
     return true
 end
 
@@ -175,13 +175,13 @@ local function disableCamera()
         local movementOk, movementReason =
             Ext.Movement.DisableKeyboardMovement()
         if not movementOk then
-            Ext.Print("[NativeCameraTweaks] Could not restore vanilla W/A/S/D: " ..
+            Ext.Print("[PlayerImmersiveCamera] Could not restore vanilla W/A/S/D: " ..
                 tostring(movementReason))
         end
     end
 
     profileEnabled = false
-    Ext.Print("[NativeCameraTweaks] Third-person profile disabled; vanilla camera and movement restored")
+    Ext.Print("[PlayerImmersiveCamera] Immersive profile disabled; vanilla camera and movement restored")
 end
 
 local function beginEnable()
@@ -197,7 +197,7 @@ local function beginEnable()
         return
     end
 
-    Ext.Print("[NativeCameraTweaks] Camera not ready yet: " .. tostring(reason))
+    Ext.Print("[PlayerImmersiveCamera] Camera not ready yet: " .. tostring(reason))
     retryTimer = Ext.Timer.WaitFor(250, function()
         retryCount = retryCount + 1
         local enabled, retryReason = enableCamera()
@@ -207,7 +207,7 @@ local function beginEnable()
 
         if retryCount >= maxRetries then
             stopRetrying()
-            Ext.Print("[NativeCameraTweaks] Could not enable camera: " ..
+            Ext.Print("[PlayerImmersiveCamera] Could not enable camera: " ..
                 tostring(retryReason))
         end
     end, 250)
@@ -229,7 +229,7 @@ end
 
 local function reportPanelApply(name, ok, reason)
     if not ok then
-        Ext.Print("[NativeCameraTweaks] Could not apply " .. name .. ": " ..
+        Ext.Print("[PlayerImmersiveCamera] Could not apply " .. name .. ": " ..
             tostring(reason))
     end
 end
@@ -322,8 +322,8 @@ end
 local function togglePanel()
     if Ext.UI ~= nil and Ext.UI.ToggleNativePanel ~= nil then
         Ext.UI.ToggleNativePanel(
-            "Native Camera Tweaks",
-            "Camera settings",
+            "BG3 Player Immersive Camera",
+            "Camera and movement settings",
             {
                 Enabled = profileRequested,
                 FOV = Config.FOV.Exploration.Close,
@@ -339,7 +339,7 @@ local function togglePanel()
         return
     end
 
-    Ext.Print("[NativeCameraTweaks] Native UI is unavailable in this bg3se-macos build")
+    Ext.Print("[PlayerImmersiveCamera] Native UI is unavailable in this bg3se-macos build")
 end
 
 if Config.Hotkey ~= nil and Config.Hotkey.Enabled and
@@ -353,7 +353,7 @@ if Config.Hotkey ~= nil and Config.Hotkey.Enabled and
             hotkeyDown = false
         end
     end, 25)
-    Ext.Print("[NativeCameraTweaks] Settings hotkey: " ..
+    Ext.Print("[PlayerImmersiveCamera] Settings hotkey: " ..
         tostring(Config.Hotkey.Key))
 end
 
