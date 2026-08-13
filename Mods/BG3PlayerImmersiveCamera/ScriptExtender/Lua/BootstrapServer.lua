@@ -14,6 +14,28 @@ local hotkeyDown = false
 local hotkeyTimer = nil
 local profileSettings = ProfileStore.Load(Config)
 local pendingProfile = {}
+local previewProfile = {}
+local wheelTimer = nil
+
+profileRequested = profileSettings.Enabled ~= false
+Config.MouseLook.CapsLock = profileSettings.CapsLockMouseLook ~= false
+
+local function copyProfile(profile)
+    local result = {}
+    for key, value in pairs(profile) do result[key] = value end
+    return result
+end
+
+local function syncConfigFromProfile(profile)
+    Config.FOV.Exploration.Close = profile.FOV
+    Config.FOV.Exploration.Far = profile.FOV
+    Config.Offsets.Exploration.Horizontal = profile.HorizontalOffset
+    Config.Offsets.Exploration.Vertical = profile.VerticalOffset
+    Config.Min = profile.MinimumPitch
+    Config.Max = profile.MaximumPitch
+    Config.Invert = profile.InvertVertical == true
+    Config.Adaptive.CrouchEnabled = profile.AdaptiveCrouch == true
+end
 
 local function stopRetrying()
     if retryTimer ~= nil then
@@ -31,6 +53,10 @@ local function enableCamera()
         Ext.Camera.SetZoomLimits == nil then
         return false, "this build of bg3se-macos does not provide the required camera controls"
     end
+
+    local activeProfile = profileSettings.Profiles[
+        profileSettings.SelectedProfile]
+    syncConfigFromProfile(activeProfile)
 
     -- Camera TypeIds are registered late during startup on the current game
     -- build. Refreshing here makes save loads deterministic.
@@ -53,17 +79,18 @@ local function enableCamera()
         return false, zoomReason
     end
 
-    if Config.ZoomToggle ~= nil and Config.ZoomToggle.Enabled then
-        if Ext.Camera.EnableZoomToggle == nil then
-            return false, "this build of bg3se-macos does not provide two-state zoom"
-        end
-        local toggleOk, toggleReason = Ext.Camera.EnableZoomToggle(
-            Config.ZoomToggle)
-        if not toggleOk then
-            return false, toggleReason
-        end
-    elseif Ext.Camera.DisableZoomToggle ~= nil then
-        Ext.Camera.DisableZoomToggle()
+    if Ext.Camera.SetZoomTarget == nil then
+        return false, "this build of bg3se-macos does not provide profile zoom targets"
+    end
+    local zoomOk, zoomReason = Ext.Camera.SetZoomTarget({
+        Distance = activeProfile.Distance,
+        SmoothTime = Config.ZoomToggle.SmoothTime,
+    })
+    if not zoomOk then
+        return false, zoomReason
+    end
+    if Ext.Camera.EnableProfileWheel ~= nil then
+        Ext.Camera.EnableProfileWheel()
     end
 
     if Config.FloorProtection ~= nil and Config.FloorProtection.Enabled then
@@ -159,6 +186,9 @@ local function disableCamera()
         end
         if Ext.Camera.DisableZoomToggle ~= nil then
             Ext.Camera.DisableZoomToggle()
+        end
+        if Ext.Camera.DisableProfileWheel ~= nil then
+            Ext.Camera.DisableProfileWheel()
         end
         if Ext.Camera.DisableFloorProtection ~= nil then
             Ext.Camera.DisableFloorProtection()
@@ -261,11 +291,77 @@ local function suspendAdaptiveBaseline()
     end
 end
 
+local function applyCameraProfile(index, profile)
+    if type(profile) ~= "table" then return end
+    profileSettings.SelectedProfile = index
+    syncConfigFromProfile(profile)
+
+    if not profileRequested then return end
+    if not profileEnabled then
+        beginEnable()
+        return
+    end
+
+    suspendAdaptiveBaseline()
+
+    local pitchOk, pitchReason = Ext.Camera.EnableMousePitch(Config)
+    reportPanelApply("pitch settings", pitchOk, pitchReason)
+
+    local zoomOk, zoomReason = Ext.Camera.SetZoomTarget({
+        Distance = profile.Distance,
+        SmoothTime = Config.ZoomToggle.SmoothTime,
+    })
+    reportPanelApply("camera distance", zoomOk, zoomReason)
+
+    local fovOk, fovReason = Ext.Camera.SetFOV(Config.FOV)
+    reportPanelApply("field of view", fovOk, fovReason)
+
+    local offsetOk, offsetReason = Ext.Camera.SetOffsets(Config.Offsets)
+    reportPanelApply("camera offsets", offsetOk, offsetReason)
+
+    refreshAdaptiveBaseline()
+end
+
 local function applyPanelValue(key, value)
     if key == "SelectedProfile" then
         profileSettings.SelectedProfile = math.max(1, math.min(4,
             math.floor(value)))
         ProfileStore.Save(profileSettings)
+        return
+    elseif key == "PreviewWheelEnabled" then
+        previewProfile.WheelEnabled = value ~= 0
+        return
+    elseif key == "PreviewDistance" then
+        previewProfile.Distance = value
+        return
+    elseif key == "PreviewFOV" then
+        previewProfile.FOV = value
+        return
+    elseif key == "PreviewHorizontalOffset" then
+        previewProfile.HorizontalOffset = value
+        return
+    elseif key == "PreviewVerticalOffset" then
+        previewProfile.VerticalOffset = value
+        return
+    elseif key == "PreviewMinimumPitch" then
+        previewProfile.MinimumPitch = value
+        return
+    elseif key == "PreviewMaximumPitch" then
+        previewProfile.MaximumPitch = value
+        return
+    elseif key == "PreviewInvertVertical" then
+        previewProfile.InvertVertical = value ~= 0
+        return
+    elseif key == "PreviewAdaptiveCrouch" then
+        previewProfile.AdaptiveCrouch = value ~= 0
+        return
+    elseif key == "PreviewHideGameUI" then
+        previewProfile.HideGameUI = value ~= 0
+        return
+    elseif key == "PreviewProfile" then
+        local index = math.max(1, math.min(4, math.floor(value)))
+        applyCameraProfile(index, previewProfile)
+        previewProfile = {}
         return
     elseif key == "ProfileWheelEnabled" then
         pendingProfile.WheelEnabled = value ~= 0
@@ -299,7 +395,7 @@ local function applyPanelValue(key, value)
         return
     elseif key == "SaveProfile" then
         local index = math.max(1, math.min(4, math.floor(value)))
-        profileSettings.Profiles[index] = pendingProfile
+        profileSettings.Profiles[index] = copyProfile(pendingProfile)
         profileSettings.SelectedProfile = index
         local ok, reason = ProfileStore.Save(profileSettings)
         if not ok then
@@ -309,10 +405,14 @@ local function applyPanelValue(key, value)
         pendingProfile = {}
         return
     elseif key == "Enabled" then
+        profileSettings.Enabled = value ~= 0
+        ProfileStore.Save(profileSettings)
         setProfileEnabled(value ~= 0)
         return
     elseif key == "CapsLockMouseLook" then
         Config.MouseLook.CapsLock = value ~= 0
+        profileSettings.CapsLockMouseLook = Config.MouseLook.CapsLock
+        ProfileStore.Save(profileSettings)
         if Ext.Camera.SetCapsLockMouseLook ~= nil then
             Ext.Camera.SetCapsLockMouseLook(
                 profileRequested and Config.MouseLook.CapsLock)
@@ -395,8 +495,8 @@ local function togglePanel()
             "BG3 Player Immersive Camera",
             "Camera and movement settings",
             {
-                Enabled = profileRequested,
-                CapsLockMouseLook = Config.MouseLook.CapsLock,
+                Enabled = profileSettings.Enabled,
+                CapsLockMouseLook = profileSettings.CapsLockMouseLook,
                 SelectedProfile = profileSettings.SelectedProfile,
                 Profiles = profileSettings.Profiles,
                 AdaptiveCrouch = Config.Adaptive.CrouchEnabled,
@@ -414,6 +514,38 @@ local function togglePanel()
     end
 
     Ext.Print("[PlayerImmersiveCamera] Native UI is unavailable in this bg3se-macos build")
+end
+
+local function nextWheelProfile(current, direction)
+    for step = 1, 4 do
+        local candidate = ((current - 1 + direction * step) % 4) + 1
+        if profileSettings.Profiles[candidate].WheelEnabled then
+            return candidate
+        end
+    end
+    return nil
+end
+
+local function switchWheelProfile(direction)
+    local current = profileSettings.SelectedProfile
+    local target = nextWheelProfile(current, direction)
+    if target == nil or target == current then return end
+
+    profileSettings.SelectedProfile = target
+    ProfileStore.Save(profileSettings)
+    applyCameraProfile(target, profileSettings.Profiles[target])
+    if Ext.UI ~= nil and Ext.UI.SelectNativePanelProfile ~= nil then
+        Ext.UI.SelectNativePanelProfile(target)
+    end
+end
+
+if Ext.Camera ~= nil and Ext.Camera.ConsumeProfileWheel ~= nil then
+    wheelTimer = Ext.Timer.WaitFor(25, function()
+        local direction = Ext.Camera.ConsumeProfileWheel()
+        if direction == -1 or direction == 1 then
+            switchWheelProfile(direction)
+        end
+    end, 25)
 end
 
 if Config.Hotkey ~= nil and Config.Hotkey.Enabled and

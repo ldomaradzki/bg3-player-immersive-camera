@@ -38,6 +38,8 @@ local function defaults(config)
     local far = config.ZoomToggle.Far
     return {
         Version = 1,
+        Enabled = true,
+        CapsLockMouseLook = config.MouseLook.CapsLock == true,
         SelectedProfile = 1,
         Profiles = {
             defaultProfile(config, close, true),
@@ -102,6 +104,9 @@ function ProfileStore.Load(config)
 
     state.SelectedProfile = math.floor(numberOr(
         saved.SelectedProfile, 1, 1, PROFILE_COUNT))
+    state.Enabled = booleanOr(saved.Enabled, state.Enabled)
+    state.CapsLockMouseLook = booleanOr(saved.CapsLockMouseLook,
+        state.CapsLockMouseLook)
     if type(saved.Profiles) == "table" then
         for index = 1, PROFILE_COUNT do
             state.Profiles[index] = mergeProfile(
