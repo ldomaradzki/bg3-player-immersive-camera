@@ -63,16 +63,21 @@ The native panel currently exposes:
 
 - Enable Player Immersive Camera
 - Caps Lock mouse look (Caps on rotates the camera; Caps off restores the cursor)
+- Four camera profiles with explicit Save controls
+- Per-profile inclusion in mouse-wheel switching
 - Adaptive crouch camera (experimental and disabled by default)
 - Field of view
-- Close and far zoom distances
+- Camera distance
 - Horizontal and vertical framing offsets
 - Minimum and maximum camera pitch
 - Invert vertical camera movement
+- A reserved Hide game UI option for future integration
 
-Changes apply live. Defaults are kept in
-`Mods/BG3PlayerImmersiveCamera/ScriptExtender/Lua/CameraConfig.lua`; settings
-persistence is planned but not implemented yet.
+The profile editor is currently disconnected from live gameplay while its UI
+and persistence are validated. Saved profiles are stored in
+`~/Documents/Larian Studios/Baldur's Gate 3/Script Extender/BG3PlayerImmersiveCamera/settings.json`.
+Defaults are kept in
+`Mods/BG3PlayerImmersiveCamera/ScriptExtender/Lua/CameraConfig.lua`.
 
 ## Compatibility and safety
 

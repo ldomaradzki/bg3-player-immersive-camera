@@ -1,4 +1,5 @@
 local Config = require("CameraConfig")
+local ProfileStore = require("ProfileStore")
 
 -- bg3se-macos currently loads mod bootstraps in its primary Lua VM while the
 -- separate client VM remains script-empty. Ext.Camera itself is client-world
@@ -11,6 +12,8 @@ local profileRequested = true
 local profileEnabled = false
 local hotkeyDown = false
 local hotkeyTimer = nil
+local profileSettings = ProfileStore.Load(Config)
+local pendingProfile = {}
 
 local function stopRetrying()
     if retryTimer ~= nil then
@@ -259,7 +262,53 @@ local function suspendAdaptiveBaseline()
 end
 
 local function applyPanelValue(key, value)
-    if key == "Enabled" then
+    if key == "SelectedProfile" then
+        profileSettings.SelectedProfile = math.max(1, math.min(4,
+            math.floor(value)))
+        ProfileStore.Save(profileSettings)
+        return
+    elseif key == "ProfileWheelEnabled" then
+        pendingProfile.WheelEnabled = value ~= 0
+        return
+    elseif key == "ProfileDistance" then
+        pendingProfile.Distance = value
+        return
+    elseif key == "ProfileFOV" then
+        pendingProfile.FOV = value
+        return
+    elseif key == "ProfileHorizontalOffset" then
+        pendingProfile.HorizontalOffset = value
+        return
+    elseif key == "ProfileVerticalOffset" then
+        pendingProfile.VerticalOffset = value
+        return
+    elseif key == "ProfileMinimumPitch" then
+        pendingProfile.MinimumPitch = value
+        return
+    elseif key == "ProfileMaximumPitch" then
+        pendingProfile.MaximumPitch = value
+        return
+    elseif key == "ProfileInvertVertical" then
+        pendingProfile.InvertVertical = value ~= 0
+        return
+    elseif key == "ProfileAdaptiveCrouch" then
+        pendingProfile.AdaptiveCrouch = value ~= 0
+        return
+    elseif key == "ProfileHideGameUI" then
+        pendingProfile.HideGameUI = value ~= 0
+        return
+    elseif key == "SaveProfile" then
+        local index = math.max(1, math.min(4, math.floor(value)))
+        profileSettings.Profiles[index] = pendingProfile
+        profileSettings.SelectedProfile = index
+        local ok, reason = ProfileStore.Save(profileSettings)
+        if not ok then
+            Ext.Print("[PlayerImmersiveCamera] Could not save profile: " ..
+                tostring(reason))
+        end
+        pendingProfile = {}
+        return
+    elseif key == "Enabled" then
         setProfileEnabled(value ~= 0)
         return
     elseif key == "CapsLockMouseLook" then
@@ -348,6 +397,8 @@ local function togglePanel()
             {
                 Enabled = profileRequested,
                 CapsLockMouseLook = Config.MouseLook.CapsLock,
+                SelectedProfile = profileSettings.SelectedProfile,
+                Profiles = profileSettings.Profiles,
                 AdaptiveCrouch = Config.Adaptive.CrouchEnabled,
                 FOV = Config.FOV.Exploration.Close,
                 CloseZoom = Config.ZoomToggle.Close,
