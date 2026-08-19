@@ -12,6 +12,7 @@ PAYLOAD_DIR="${PACKAGE_DIR}/Payload"
 
 DYLIB="${BG3SE_REPO}/build/lib/libbg3se.dylib"
 PATCHER_SOURCE="${PROJECT_ROOT}/tools/macho_weak_injector.c"
+BG3SE_COMMIT="$(/usr/bin/git -C "${BG3SE_REPO}" rev-parse HEAD)"
 
 [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]] || {
     echo "Invalid version: ${VERSION}" >&2
@@ -28,7 +29,14 @@ PATCHER_SOURCE="${PROJECT_ROOT}/tools/macho_weak_injector.c"
 /usr/bin/printf '%s\n' "${VERSION}" > "${PACKAGE_DIR}/VERSION"
 /bin/cp "${PROJECT_ROOT}/README.md" "${PACKAGE_DIR}/README.md"
 /bin/cp "${PROJECT_ROOT}/LICENSE" "${PACKAGE_DIR}/LICENSE"
+/bin/cp "${PROJECT_ROOT}/EXCEPTIONS" "${PACKAGE_DIR}/EXCEPTIONS"
 /bin/cp -R "${PROJECT_ROOT}/assets" "${PACKAGE_DIR}/assets"
+/usr/bin/printf '%s\n' \
+    "# Corresponding source code" \
+    "" \
+    "- Camera mod, installer, and Mach-O patcher: https://github.com/ldomaradzki/bg3-player-immersive-camera/tree/v${VERSION}" \
+    "- Native bg3se-macos extender (${BG3SE_COMMIT}): https://github.com/ldomaradzki/bg3se-macos/tree/${BG3SE_COMMIT}" \
+    > "${PACKAGE_DIR}/SOURCE-CODE.md"
 /bin/cp "${DYLIB}" "${PAYLOAD_DIR}/libbg3se.dylib"
 /usr/bin/xcrun clang -std=c11 -Os -Wall -Wextra -Werror \
     "${PATCHER_SOURCE}" -o "${PAYLOAD_DIR}/macho_weak_injector"
