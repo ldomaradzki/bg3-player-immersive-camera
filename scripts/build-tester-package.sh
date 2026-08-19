@@ -11,14 +11,14 @@ PACKAGE_DIR="${PROJECT_ROOT}/dist/${PACKAGE_NAME}"
 PAYLOAD_DIR="${PACKAGE_DIR}/Payload"
 
 DYLIB="${BG3SE_REPO}/build/lib/libbg3se.dylib"
-PATCHER="${BG3SE_REPO}/tools/vendor/insert_dylib/insert_dylib_bin"
+PATCHER_SOURCE="${PROJECT_ROOT}/tools/macho_weak_injector.c"
 
 [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]] || {
     echo "Invalid version: ${VERSION}" >&2
     exit 1
 }
 [[ -f "${DYLIB}" ]] || { echo "Missing extender build: ${DYLIB}" >&2; exit 1; }
-[[ -x "${PATCHER}" ]] || { echo "Missing insert_dylib tool: ${PATCHER}" >&2; exit 1; }
+[[ -f "${PATCHER_SOURCE}" ]] || { echo "Missing Mach-O patcher source: ${PATCHER_SOURCE}" >&2; exit 1; }
 
 /bin/rm -rf "${PACKAGE_DIR}"
 /bin/mkdir -p "${PAYLOAD_DIR}"
@@ -30,15 +30,16 @@ PATCHER="${BG3SE_REPO}/tools/vendor/insert_dylib/insert_dylib_bin"
 /bin/cp "${PROJECT_ROOT}/LICENSE" "${PACKAGE_DIR}/LICENSE"
 /bin/cp -R "${PROJECT_ROOT}/assets" "${PACKAGE_DIR}/assets"
 /bin/cp "${DYLIB}" "${PAYLOAD_DIR}/libbg3se.dylib"
-/bin/cp "${PATCHER}" "${PAYLOAD_DIR}/insert_dylib"
+/usr/bin/xcrun clang -std=c11 -Os -Wall -Wextra -Werror \
+    "${PATCHER_SOURCE}" -o "${PAYLOAD_DIR}/macho_weak_injector"
 /bin/cp -R "${PROJECT_ROOT}/Mods/BG3PlayerImmersiveCamera" "${PAYLOAD_DIR}/BG3PlayerImmersiveCamera"
-/bin/chmod +x "${PACKAGE_DIR}/Install.command" "${PACKAGE_DIR}/Uninstall.command" "${PAYLOAD_DIR}/insert_dylib"
+/bin/chmod +x "${PACKAGE_DIR}/Install.command" "${PACKAGE_DIR}/Uninstall.command" "${PAYLOAD_DIR}/macho_weak_injector"
 
 /usr/bin/xattr -cr "${PACKAGE_DIR}" 2>/dev/null || true
 /usr/bin/codesign --force --sign - "${PAYLOAD_DIR}/libbg3se.dylib" >/dev/null
-/usr/bin/codesign --force --sign - "${PAYLOAD_DIR}/insert_dylib" >/dev/null
+/usr/bin/codesign --force --sign - "${PAYLOAD_DIR}/macho_weak_injector" >/dev/null
 /usr/bin/codesign --verify --strict "${PAYLOAD_DIR}/libbg3se.dylib"
-/usr/bin/codesign --verify --strict "${PAYLOAD_DIR}/insert_dylib"
+/usr/bin/codesign --verify --strict "${PAYLOAD_DIR}/macho_weak_injector"
 
 echo "Built tester package: ${PACKAGE_DIR}"
 /usr/bin/du -sh "${PACKAGE_DIR}"

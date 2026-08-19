@@ -135,7 +135,7 @@ echo
 
 [[ "$(/usr/bin/uname -m)" == "arm64" ]] || die "Apple Silicon is required."
 [[ -f "${PAYLOAD_DIR}/libbg3se.dylib" ]] || die "Payload/libbg3se.dylib is missing."
-[[ -x "${PAYLOAD_DIR}/insert_dylib" ]] || die "Payload/insert_dylib is missing or not executable."
+[[ -x "${PAYLOAD_DIR}/macho_weak_injector" ]] || die "Payload/macho_weak_injector is missing or not executable."
 [[ -d "${PAYLOAD_DIR}/BG3PlayerImmersiveCamera" ]] || die "The camera mod payload is missing."
 [[ -f "${SCRIPT_DIR}/merge-input.js" ]] || die "The keyboard configuration helper is missing."
 /usr/bin/xattr -dr com.apple.quarantine "${SCRIPT_DIR}" 2>/dev/null || true
@@ -191,8 +191,7 @@ else
 
     PATCHED_EXEC="${MACOS_DIR}/.bg3pic-patched.$$"
     /bin/cp -p "${GAME_EXEC}" "${PATCHED_EXEC}"
-    "${PAYLOAD_DIR}/insert_dylib" --weak --inplace --strip-codesig --all-yes \
-        "@loader_path/libbg3se.dylib" "${PATCHED_EXEC}" >/dev/null
+    "${PAYLOAD_DIR}/macho_weak_injector" "${PATCHED_EXEC}"
     /usr/bin/codesign --force --sign - "${PATCHED_EXEC}" >/dev/null
     is_patched "${PATCHED_EXEC}"
     /bin/mv -f "${PATCHED_EXEC}" "${GAME_EXEC}"
