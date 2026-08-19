@@ -4,7 +4,6 @@ set -Eeuo pipefail
 
 PRODUCT_NAME="BG3 Player Immersive Camera"
 SUPPORTED_VERSION="4.1.1.7398727"
-SUPPORTED_CLEAN_SHA256="48991823b89a672267431766b5691b996588b38acb950c6d5f0e22eeaf054d8f"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PAYLOAD_DIR="${SCRIPT_DIR}/Payload"
 if [[ -f "${SCRIPT_DIR}/VERSION" ]]; then
@@ -161,9 +160,6 @@ GAME_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "
 PREEXISTING_PATCH=0
 if is_patched "${GAME_EXEC}"; then
     PREEXISTING_PATCH=1
-else
-    CLEAN_SHA256="$(/usr/bin/shasum -a 256 "${GAME_EXEC}" | /usr/bin/awk '{print $1}')"
-    [[ "${CLEAN_SHA256}" == "${SUPPORTED_CLEAN_SHA256}" ]] || die "The BG3 executable does not match the supported build. Use Steam's Verify Integrity, then try again."
 fi
 
 echo "Game: ${BG3_APP}"
