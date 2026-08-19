@@ -37,6 +37,13 @@ local function syncConfigFromProfile(profile)
     Config.Adaptive.CrouchEnabled = profile.AdaptiveCrouch == true
 end
 
+local function applyGameUIVisibility(hidden)
+    if Ext.UI == nil or Ext.UI.SetHideUIWithMouseLook == nil then
+        return false, "this build of bg3se-macos does not provide presentation control"
+    end
+    return Ext.UI.SetHideUIWithMouseLook(hidden == true)
+end
+
 local function stopRetrying()
     if retryTimer ~= nil then
         Ext.Timer.Cancel(retryTimer)
@@ -166,6 +173,12 @@ local function enableCamera()
         end
     end
 
+    local uiOk, uiReason = applyGameUIVisibility(activeProfile.HideGameUI)
+    if not uiOk then
+        Ext.Print("[PlayerImmersiveCamera] Could not apply game UI visibility: " ..
+            tostring(uiReason))
+    end
+
     stopRetrying()
     profileEnabled = true
     Ext.Print("[PlayerImmersiveCamera] Camera controls enabled")
@@ -174,6 +187,12 @@ end
 
 local function disableCamera()
     stopRetrying()
+
+    local uiOk, uiReason = applyGameUIVisibility(false)
+    if not uiOk then
+        Ext.Print("[PlayerImmersiveCamera] Could not restore game UI: " ..
+            tostring(uiReason))
+    end
 
     -- Adaptive framing snapshots the configured FOV/offset baseline, so it
     -- must restore that baseline before the definition overrides are cleared.
@@ -318,6 +337,9 @@ local function applyCameraProfile(index, profile)
 
     local offsetOk, offsetReason = Ext.Camera.SetOffsets(Config.Offsets)
     reportPanelApply("camera offsets", offsetOk, offsetReason)
+
+    local uiOk, uiReason = applyGameUIVisibility(profile.HideGameUI)
+    reportPanelApply("game UI visibility", uiOk, uiReason)
 
     refreshAdaptiveBaseline()
 end

@@ -71,10 +71,10 @@ The native panel currently exposes:
 - Horizontal and vertical framing offsets
 - Minimum and maximum camera pitch
 - Invert vertical camera movement
-- A reserved Hide game UI option for future integration
+- Per-profile UI hiding during Caps Lock mouse look, with automatic restoration
+  when mouse look ends, combat begins, or Immersive Camera is disabled
 
-The profile editor is currently disconnected from live gameplay while its UI
-and persistence are validated. Saved profiles are stored in
+Profile changes are applied live and saved settings are stored in
 `~/Documents/Larian Studios/Baldur's Gate 3/Script Extender/BG3PlayerImmersiveCamera/settings.json`.
 Defaults are kept in
 `Mods/BG3PlayerImmersiveCamera/ScriptExtender/Lua/CameraConfig.lua`.
