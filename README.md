@@ -1,124 +1,75 @@
 # BG3 Player Immersive Camera
 
-A native macOS camera and direct-movement experience for Baldur's Gate 3.
+A native macOS immersive camera and W/A/S/D movement mod for Baldur's Gate 3.
 
-Player Immersive Camera brings the camera down into the world, puts movement on
-W/A/S/D, and keeps the controlled character framed while exploring. It is not a
-Windows mod running through a compatibility layer: the Lua profile talks to
-native camera, input, movement, and AppKit UI extensions in `bg3se-macos`.
+<p align="center">
+  <img src="assets/gameplay.jpg" alt="Immersive third-person gameplay" width="760">
+</p>
 
-> [!IMPORTANT]
-> This is an early, version-specific build. It currently targets Baldur's Gate 3
-> `4.1.1.7398727` on Apple Silicon and requires the matching
-> [`compat/bg3-7398727`](https://github.com/tdimino/bg3se-macos/tree/compat/bg3-7398727)
-> build of `bg3se-macos`. A normal upstream Script Extender build does not yet
-> contain the native APIs used here.
+## Features
 
-## What it does
+- Direct W/A/S/D character movement
+- Third-person camera with mouse-controlled horizontal and vertical rotation
+- Caps Lock mouse look without holding the middle mouse button
+- Four saved camera profiles and mouse-wheel profile switching
+- Adjustable distance, FOV, framing, pitch range, and vertical inversion
+- Optional UI hiding, adaptive crouch camera, and movement FOV
+- Automatic vanilla camera and keyboard controls during combat
+- Native settings panel opened with `\`
 
-- Direct W/A/S/D character movement during exploration
-- Mouse-controlled horizontal and vertical camera rotation
-- Over-the-shoulder framing with responsive character follow
-- Smooth two-position close/far zoom on the scroll wheel
-- Adjustable FOV, zoom, framing, pitch limits, and vertical inversion
-- Adaptive framing while hiding and an FOV increase while moving
-- Automatic return to BG3's tactical camera and vanilla keyboard behavior in
-  combat, with the immersive profile restored afterward
-- Optional Caps Lock mouse-look mode, enabled by default
-- A small native settings panel toggled with `\`
+<p align="center">
+  <img src="assets/settings-panel.jpg" alt="Native camera settings panel" width="760">
+</p>
 
-Controller mode is intentionally out of scope. The mod keeps BG3 in its native
-keyboard-and-mouse interface.
+## Requirements
 
-## Installation
+- Apple Silicon Mac
+- Steam version of Baldur's Gate 3
+- BG3 version `4.1.1.7398727`
 
-1. Install the matching `bg3se-macos` build for BG3 `4.1.1.7398727`.
-2. Copy `Mods/BG3PlayerImmersiveCamera` into:
+The native hooks are game-version-specific. The installer refuses unsupported
+versions instead of patching unknown code.
 
-   ```text
-   ~/Documents/Larian Studios/Baldur's Gate 3/Mods/
-   ```
+## Install
 
-3. Back up
-   `~/Documents/Larian Studios/Baldur's Gate 3/PlayerProfiles/Public/inputconfig_p1.json`.
-4. Add or merge these keyboard bindings in that file:
+1. Download and unzip the latest macOS release.
+2. Quit Baldur's Gate 3 completely.
+3. Right-click `Install.command`, choose **Open**, and confirm.
+4. Launch BG3 normally through Steam and load a save.
 
-   ```json
-   {
-       "CharacterMoveBackward": ["key:s"],
-       "CharacterMoveForward": ["key:w"],
-       "CharacterMoveLeft": ["key:a"],
-       "CharacterMoveRight": ["key:d"]
-   }
-   ```
+The installer finds BG3, backs up affected files, installs the matching
+[`bg3se-macos` fork](https://github.com/ldomaradzki/bg3se-macos/tree/compat/bg3-7398727),
+installs the mod, and configures W/A/S/D. Testers do not need Xcode, Homebrew,
+CMake, Git, or custom Steam launch options.
 
-5. Launch BG3 and load a save. Press `\` once to open the settings panel.
-
-The mod is loaded as a loose Script Extender mod and does not need to be added
-to `modsettings.lsx`.
-
-## Settings
-
-The native panel currently exposes:
-
-- Enable Player Immersive Camera
-- Caps Lock mouse look (Caps on rotates the camera; Caps off restores the cursor)
-- Four camera profiles with explicit Save controls
-- Per-profile inclusion in mouse-wheel switching
-- Adaptive crouch camera (experimental and disabled by default)
-- Field of view
-- Camera distance
-- Horizontal and vertical framing offsets
-- Minimum and maximum camera pitch
-- Invert vertical camera movement
-- Per-profile UI hiding during Caps Lock mouse look, with automatic restoration
-  when mouse look ends, combat begins, or Immersive Camera is disabled
-
-Profile changes are applied live and saved settings are stored in
-`~/Documents/Larian Studios/Baldur's Gate 3/Script Extender/BG3PlayerImmersiveCamera/settings.json`.
-Defaults are kept in
-`Mods/BG3PlayerImmersiveCamera/ScriptExtender/Lua/CameraConfig.lua`.
-
-## Compatibility and safety
-
-BG3 internals change between game builds. The native extender gates its hooks
-to the supported executable, and unsupported builds should fail closed instead
-of applying unknown offsets. Do not replace or rebuild the extender while BG3
-is running: quit the game completely, build or install, and then relaunch.
-
-The current build has been tested on Apple Silicon with BG3 `4.1.1.7398727`.
-Intel Macs and other game builds are not currently supported.
+Press `\` in game to open settings. Saved profiles live outside the mod and are
+preserved across reinstallations.
 
 ## Uninstall
 
-Quit BG3, remove the `BG3PlayerImmersiveCamera` directory from the game's
-`Mods` folder, and remove the four `CharacterMove*` bindings if you want W/A/S/D
-to return entirely to BG3's default camera controls.
+Quit BG3, then right-click `Uninstall.command` and choose **Open**. The
+uninstaller restores the game executable, previous Script Extender, previous
+mod files, and keyboard bindings that existed before installation. Camera
+profiles are kept.
 
-## Project structure
+## Development
 
-- This repository contains the installable Lua profile and its defaults.
-- Native engine integration is maintained in the `compat/bg3-7398727` branch of
-  `bg3se-macos`.
-- The old standalone WASD experiment is no longer needed; camera and movement
-  are one coordinated profile here.
+This repository contains the Lua mod and release installer. Native camera,
+input, movement, and AppKit APIs are maintained in
+[`ldomaradzki/bg3se-macos`](https://github.com/ldomaradzki/bg3se-macos/tree/compat/bg3-7398727).
 
-See [Architecture](docs/ARCHITECTURE.md) for the boundary between the Lua mod
-and the native extender.
+Build an unpacked tester package with:
+
+```bash
+./scripts/build-tester-package.sh 1.0.0
+```
 
 ## Credits
 
 - [Ersh's BG3 Native Camera Tweaks](https://github.com/ersh1/BG3_NativeCameraTweaks)
-  for the original Windows project and camera behavior reference
-- [Ch4nKyy's BG3WASD](https://github.com/Ch4nKyy/BG3WASD) for movement design
-  reference
-- [tdimino's bg3se-macos](https://github.com/tdimino/bg3se-macos), which
-  provides the native macOS foundation
+- [Ch4nKyy's BG3WASD](https://github.com/Ch4nKyy/BG3WASD)
+- [tdimino's bg3se-macos](https://github.com/tdimino/bg3se-macos)
 
-This project is an independent native macOS implementation and does not ship
-the Windows DLLs from those projects.
-
-## License
-
-GPL-3.0-or-later with the project's modding and linking exceptions. See
-[LICENSE](LICENSE) and [EXCEPTIONS](EXCEPTIONS).
+This is an independent native macOS implementation and does not include the
+Windows DLLs. Licensed under GPL-3.0-or-later with the exceptions in
+[EXCEPTIONS](EXCEPTIONS).
